@@ -1,0 +1,36 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:onboarddb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+
+jwt:
+  secret: change-me-super-long-secret-key-for-jwt-signing-please-override
+  expiration-ms: 3600000
+
+ollama:
+  host: http://localhost:11434
+  model: llama3
+
+webhook:
+  github:
+    secret: ${WEBHOOK_GITHUB_SECRET:github-demo-secret}
+  jira:
+    secret: ${WEBHOOK_JIRA_SECRET:jira-demo-secret}
+  slack:
+    signing-secret: ${WEBHOOK_SLACK_SECRET:slack-demo-secret}
+
+logging:
+  level:
+    root: INFO

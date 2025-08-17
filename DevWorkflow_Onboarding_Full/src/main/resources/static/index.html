@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>DevWorkflow Onboarding Demo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+  <style>body{font-family:system-ui,Arial;margin:20px} pre{background:#f6f6f6;padding:10px}</style>
+</head>
+<body>
+<h2>DevWorkflow Onboarding Demo</h2>
+<div>
+  <button onclick="registerUser()">Register</button>
+  <button onclick="loginUser()">Login</button>
+  <span id="tok"></span>
+</div>
+<hr/>
+<div>
+  <h3>Tasks</h3>
+  <button onclick="listTasks()">GET /api/tasks</button>
+  <button onclick="createTask()">POST /api/tasks</button>
+  <pre id="tasks"></pre>
+</div>
+<hr/>
+<div>
+  <h3>Realtime</h3>
+  <button onclick="connectWS()">Connect WS</button>
+  <button onclick="push()">Push</button>
+  <pre id="ws"></pre>
+  <button onclick="sse()">Start SSE</button>
+  <pre id="sse"></pre>
+</div>
+
+<script>
+function token(){ return localStorage.getItem('t')||''; }
+function setTok(t){ localStorage.setItem('t', t); document.getElementById('tok').textContent = t? 'JWT saved' : ''; }
+function headers(){ return token()? { 'Authorization': 'Bearer '+token(), 'Content-Type':'application/json'} : {'Content-Type':'application/json'}; }
+
+function registerUser(){
+  fetch('/api/auth/register', {method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email:'user@example.com', password:'pass'})}).then(()=>alert('registered'));
+}
+function loginUser(){
+  fetch('/api/auth/login', {method:'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({email:'user@example.com', password:'pass'})})
+    .then(r=>r.json()).then(j=>setTok(j.token));
+}
+
+function listTasks(){
+  fetch('/api/tasks', {headers: headers()}).then(r=>r.json()).then(j=>document.getElementById('tasks').textContent = JSON.stringify(j,null,2));
+}
+function createTask(){
+  fetch('/api/tasks', {method:'POST', headers: headers(), body: JSON.stringify({title:'Demo Task', status:'TO_DO'})})
+    .then(r=>r.json()).then(j=>listTasks());
+}
+
+let stomp;
+function connectWS(){
+  var s = new SockJS('/ws');
+  stomp = Stomp.over(s);
+  stomp.connect({}, function(){
+    stomp.subscribe('/topic/updates', function(message){ document.getElementById('ws').textContent += message.body+'\n'; });
+  });
+}
+function push(){
+  fetch('/realtime/push', {method:'POST', headers: headers(), body: JSON.stringify({msg: 'hello '+Date.now()})});
+}
+
+function sse(){
+  const es = new EventSource('/sse/stream');
+  es.onmessage = (e)=> document.getElementById('sse').textContent += e.data+'\n';
+}
+</script>
+</body>
+</html>
